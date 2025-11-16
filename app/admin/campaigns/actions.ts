@@ -71,6 +71,7 @@ export async function createCampaign(data: {
     })
 
     revalidatePath('/admin/campaigns')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,
@@ -134,6 +135,7 @@ export async function updateCampaign(
     await campaign.save()
 
     revalidatePath('/admin/campaigns')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,
@@ -179,6 +181,7 @@ export async function deleteCampaign(campaignId: string): Promise<{
     }
 
     revalidatePath('/admin/campaigns')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,

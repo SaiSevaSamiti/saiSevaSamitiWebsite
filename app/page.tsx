@@ -16,7 +16,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import Section from '@/components/layout/Section'
+import { getActivitiesNumber } from '@/app/admin/activities-number/actions'
+import { getAllMembers } from '@/app/admin/members/actions'
+import { getAllCampaigns } from '@/app/admin/campaigns/actions'
 
 interface ActivityNumbers {
   happyPeople: number
@@ -28,8 +32,8 @@ interface ActivityNumbers {
 interface Member {
   id: string
   name: string
-  designation: string
-  image: string
+  designation?: string
+  image?: string
 }
 
 interface Campaign {
@@ -49,56 +53,46 @@ export default function HomePage() {
   })
   const [topMembers, setTopMembers] = useState<Member[]>([])
   const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // TODO: Fetch real data from API
-    // Placeholder data for now
-    setActivityNumbers({
-      happyPeople: 10000,
-      offices: 5,
-      staff: 50,
-      volunteers: 200,
-    })
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
 
-    // Placeholder members
-    setTopMembers([
-      {
-        id: '1',
-        name: 'John Doe',
-        designation: 'President',
-        image: '/placeholder-avatar.jpg',
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        designation: 'Vice President',
-        image: '/placeholder-avatar.jpg',
-      },
-      {
-        id: '3',
-        name: 'Mike Johnson',
-        designation: 'Secretary',
-        image: '/placeholder-avatar.jpg',
-      },
-    ])
+        // Fetch activity numbers
+        const activityResult = await getActivitiesNumber()
+        if (activityResult.success && activityResult.data) {
+          setActivityNumbers({
+            happyPeople: activityResult.data.happyPeople,
+            offices: activityResult.data.offices,
+            staff: activityResult.data.staff,
+            volunteers: activityResult.data.volunteers,
+          })
+        }
 
-    // Placeholder campaigns
-    setRecentCampaigns([
-      {
-        id: '1',
-        name: 'Food Distribution Drive',
-        description: 'Providing meals to underprivileged communities',
-        image: '/placeholder-campaign.jpg',
-        date: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        name: 'Medical Camp',
-        description: 'Free health checkups and medicines',
-        image: '/placeholder-campaign.jpg',
-        date: new Date().toISOString(),
-      },
-    ])
+        // Fetch members (top 6 active members)
+        const membersResult = await getAllMembers()
+        if (membersResult.success && membersResult.members) {
+          const activeMembers = membersResult.members
+            .filter((m) => m.isActive)
+            .slice(0, 6)
+          setTopMembers(activeMembers)
+        }
+
+        // Fetch campaigns (recent 4)
+        const campaignsResult = await getAllCampaigns()
+        if (campaignsResult.success && campaignsResult.campaigns) {
+          setRecentCampaigns(campaignsResult.campaigns.slice(0, 4))
+        }
+      } catch (error) {
+        console.error('Error fetching homepage data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   const stats = [
@@ -112,21 +106,21 @@ export default function HomePage() {
     {
       icon: Building2,
       label: 'Offices',
-      value: activityNumbers.offices,
+      value: activityNumbers.offices.toLocaleString(),
       color: 'text-accent',
       bgColor: 'bg-accent/10',
     },
     {
       icon: UserCheck,
       label: 'Staff Members',
-      value: activityNumbers.staff,
+      value: activityNumbers.staff.toLocaleString(),
       color: 'text-success',
       bgColor: 'bg-success/10',
     },
     {
       icon: Users,
       label: 'Volunteers',
-      value: activityNumbers.volunteers,
+      value: activityNumbers.volunteers.toLocaleString(),
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
@@ -208,31 +202,49 @@ export default function HomePage() {
 
       {/* Statistics Section */}
       <Section className="bg-card !py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <Card
-              key={index}
-              className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 animate-in zoom-in-95"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`h-14 w-14 rounded-full ${stat.bgColor} flex items-center justify-center`}
-                  >
-                    <stat.icon className={`h-7 w-7 ${stat.color}`} />
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-0 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-14 w-14 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {stat.label}
-                    </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <Card
+                key={index}
+                className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 animate-in zoom-in-95"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-14 w-14 rounded-full ${stat.bgColor} flex items-center justify-center`}
+                    >
+                      <stat.icon className={`h-7 w-7 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold">{stat.value}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stat.label}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </Section>
 
       {/* Services Section */}
@@ -299,7 +311,32 @@ export default function HomePage() {
       </Section>
 
       {/* Recent Campaigns Section */}
-      {recentCampaigns.length > 0 && (
+      {isLoading ? (
+        <Section>
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <Badge variant="outline" className="mb-4">
+                Our Impact
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Recent Campaigns
+              </h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <CardContent className="p-6 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      ) : recentCampaigns.length > 0 ? (
         <Section>
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -325,21 +362,27 @@ export default function HomePage() {
                 className="overflow-hidden group hover:shadow-xl transition-shadow"
               >
                 <div className="relative h-48 bg-muted overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="h-16 w-16 text-muted-foreground/20" />
-                    <p className="absolute text-sm text-muted-foreground">
-                      Campaign Image
-                    </p>
-                  </div>
+                  {campaign.image ? (
+                    <Image
+                      src={campaign.image}
+                      alt={campaign.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Sparkles className="h-16 w-16 text-muted-foreground/20" />
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-6 space-y-3">
-                  <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                  <h3 className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
                     {campaign.name}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground line-clamp-2">
                     {campaign.description}
                   </p>
-                  <Link href={`/campaigns`}>
+                  <Link href="/campaigns">
                     <Button variant="link" className="p-0">
                       Learn More
                       <ArrowRight className="ml-1 h-4 w-4" />
@@ -350,10 +393,32 @@ export default function HomePage() {
             ))}
           </div>
         </Section>
-      )}
+      ) : null}
 
       {/* Team Section */}
-      {topMembers.length > 0 && (
+      {isLoading ? (
+        <Section className="bg-muted/30">
+          <div className="text-center space-y-4 mb-12">
+            <Badge variant="outline" className="mx-auto w-fit">
+              Our Team
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold">Meet Our Leaders</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="text-center">
+                <CardContent className="p-6 space-y-4">
+                  <Skeleton className="h-32 w-32 rounded-full mx-auto" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32 mx-auto" />
+                    <Skeleton className="h-4 w-24 mx-auto" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      ) : topMembers.length > 0 ? (
         <Section className="bg-muted/30">
           <div className="text-center space-y-4 mb-12">
             <Badge variant="outline" className="mx-auto w-fit">
@@ -374,14 +439,27 @@ export default function HomePage() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6 space-y-4">
-                  <div className="h-32 w-32 mx-auto rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                    <UserCheck className="h-16 w-16 text-muted-foreground/50" />
+                  <div className="h-32 w-32 mx-auto rounded-full bg-muted overflow-hidden relative">
+                    {member.image ? (
+                      <Image
+                        src={member.image}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <UserCheck className="h-16 w-16 text-muted-foreground/50" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {member.designation}
-                    </p>
+                    {member.designation && (
+                      <p className="text-sm text-muted-foreground">
+                        {member.designation}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -397,7 +475,7 @@ export default function HomePage() {
             </Link>
           </div>
         </Section>
-      )}
+      ) : null}
 
       {/* CTA Section */}
       <Section className="gradient-primary text-primary-foreground">

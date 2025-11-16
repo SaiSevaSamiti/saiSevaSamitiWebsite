@@ -121,6 +121,7 @@ export async function createMember(data: {
     })
 
     revalidatePath('/admin/members')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,
@@ -206,6 +207,7 @@ export async function updateMember(
     await member.save()
 
     revalidatePath('/admin/members')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,
@@ -258,6 +260,7 @@ export async function deleteMember(memberId: string): Promise<{
     }
 
     revalidatePath('/admin/members')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,

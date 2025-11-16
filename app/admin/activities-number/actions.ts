@@ -99,6 +99,7 @@ export async function updateActivitiesNumber(data: {
     }
 
     revalidatePath('/admin/activities-number')
+    revalidatePath('/') // Revalidate homepage
 
     return {
       success: true,
