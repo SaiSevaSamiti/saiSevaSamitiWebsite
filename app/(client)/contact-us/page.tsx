@@ -9,8 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import Section from '@/components/layout/Section'
+import ParallaxHero from '@/components/layout/ParallaxHero'
 import { toast } from 'sonner'
 import { createContactSubmission } from '@/app/admin/contact-us/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
+import { SlideIn } from '@/components/animations/SlideIn'
+import { StaggerContainer, StaggerItem } from '@/components/animations/StaggerContainer'
 
 export default function ContactUsPage() {
   const [formData, setFormData] = useState({
@@ -113,201 +117,238 @@ export default function ContactUsPage() {
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-primary">Get In Touch</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Contact <span className="text-primary">Us</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Have questions or want to get involved? We'd love to hear from you. Reach out and let's
-            make a difference together.
-          </p>
+      <ParallaxHero imageSrc="/images/banner-image-bg.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit bg-white/10 border-white/30 text-white hover:bg-white/20">Get In Touch</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Contact <span className="text-white/90">Us</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Have questions or want to get involved? We'd love to hear from you. Reach out and let's
+                make a difference together.
+              </p>
+            </div>
+          </FadeIn>
         </div>
-      </Section>
+      </ParallaxHero>
 
       {/* Contact Info Cards */}
-      <Section className="!py-12" shade="primary">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Section shade="primary" className="!py-16">
+        <StaggerContainer staggerDelay={0.08} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {contactInfo.map((info, index) => (
-            <Card
-              key={index}
-              className="hover:shadow-lg transition-shadow animate-in fade-in-50"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-6 text-center space-y-4">
-                <div className={`h-16 w-16 rounded-full ${info.bgColor} mx-auto flex items-center justify-center`}>
-                  <info.icon className={`h-8 w-8 ${info.color}`} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">{info.title}</h3>
-                  {info.link ? (
-                    <a
-                      href={info.link}
-                      className="text-muted-foreground hover:text-primary transition-colors text-sm"
-                    >
-                      {info.value}
-                    </a>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">{info.value}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <StaggerItem key={index}>
+              <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full border-2 border-transparent hover:border-primary/20">
+                <CardContent className="p-8 text-center space-y-4">
+                  <div className={`h-16 w-16 rounded-2xl ${info.bgColor} mx-auto flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <info.icon className={`h-8 w-8 ${info.color}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-3">{info.title}</h3>
+                    {info.link ? (
+                      <a
+                        href={info.link}
+                        className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium inline-flex items-center gap-1 group"
+                      >
+                        <span>{info.value}</span>
+                      </a>
+                    ) : (
+                      <p className="text-muted-foreground text-sm leading-relaxed">{info.value}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </Section>
 
       {/* Contact Form Section */}
       <Section shade="accent">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="text-center space-y-4 mb-12">
+          <Badge variant="outline" className="mx-auto w-fit">
+            Send a Message
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold">Get In Touch With Us</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Have a question or want to learn more about our work? Fill out the form below and our team will get back to you as soon as possible.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
           {/* Left Column - Form */}
-          <div>
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-2">Send Us a Message</h2>
-              <p className="text-muted-foreground">
-                Fill out the form below and we'll get back to you as soon as possible.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject *</Label>
-                <Input
-                  id="subject"
-                  type="text"
-                  placeholder="How can we help you?"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message *</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Tell us more about your inquiry..."
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  rows={6}
-                  className="resize-none"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full gradient-primary"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>Sending...</>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-5 w-5" />
-                    Send Message
-                  </>
-                )}
-              </Button>
-            </form>
-          </div>
-
-          {/* Right Column - Info */}
-          <div className="space-y-8">
-            <Card className="border-2 border-primary/20">
-              <CardContent className="p-8 space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold mb-4">Why Contact Us?</h3>
-                  <ul className="space-y-3 text-muted-foreground">
-                    <li className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
+          <SlideIn direction="left" delay={0.1}>
+            <Card className="border-2 h-full flex flex-col">
+              <CardContent className="p-8 flex-1">
+                <form onSubmit={handleSubmit} className="h-full flex flex-col">
+                  <div className="space-y-6 flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name *</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="John Doe"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          disabled={isSubmitting}
+                          required
+                        />
                       </div>
-                      <span>Learn more about our programs and initiatives</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                      </div>
-                      <span>Volunteer opportunities and how to get involved</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                      </div>
-                      <span>Partnership and collaboration inquiries</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                      </div>
-                      <span>Donation information and support</span>
-                    </li>
-                  </ul>
-                </div>
 
-                <div className="pt-6 border-t">
-                  <h4 className="font-semibold mb-3">Quick Response</h4>
-                  <p className="text-sm text-muted-foreground">
-                    We aim to respond to all inquiries within 24-48 hours during business days. For
-                    urgent matters, please call us directly.
-                  </p>
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="john@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          disabled={isSubmitting}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject *</Label>
+                      <Input
+                        id="subject"
+                        type="text"
+                        placeholder="How can we help you?"
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2 flex-1 flex flex-col">
+                      <Label htmlFor="message">Message *</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Tell us more about your inquiry..."
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="resize-none flex-1"
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full gradient-primary mt-6"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>Sending...</>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-5 w-5" />
+                        Send Message
+                      </>
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
-          </div>
+          </SlideIn>
+
+          {/* Right Column - Info */}
+          <SlideIn direction="right" delay={0.2}>
+            <Card className="border-2 border-primary/20 shadow-lg h-full flex flex-col">
+              <CardContent className="p-8 space-y-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-6">Why Contact Us?</h3>
+                    <ul className="space-y-4">
+                      <li className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                          <div className="h-2.5 w-2.5 rounded-full bg-primary"></div>
+                        </div>
+                        <span className="text-muted-foreground leading-relaxed">Learn more about our programs and initiatives</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                          <div className="h-2.5 w-2.5 rounded-full bg-primary"></div>
+                        </div>
+                        <span className="text-muted-foreground leading-relaxed">Volunteer opportunities and how to get involved</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                          <div className="h-2.5 w-2.5 rounded-full bg-primary"></div>
+                        </div>
+                        <span className="text-muted-foreground leading-relaxed">Partnership and collaboration inquiries</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                          <div className="h-2.5 w-2.5 rounded-full bg-primary"></div>
+                        </div>
+                        <span className="text-muted-foreground leading-relaxed">Donation information and support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6 border-t">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Clock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold mb-2">Quick Response</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          We aim to respond to all inquiries within 24-48 hours during business days. For urgent matters, please call us directly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          </SlideIn>
         </div>
       </Section>
 
       {/* Map Section - Placeholder */}
       <Section shade="secondary">
-        <div className="text-center space-y-4 mb-8">
-          <h2 className="text-3xl font-bold">Visit Us</h2>
+        <div className="text-center space-y-4 mb-12">
+          <Badge variant="outline" className="mx-auto w-fit">
+            Our Location
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold">Visit Us</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Come visit our office to learn more about our work and how you can contribute to making a
             difference in the community.
           </p>
         </div>
 
-        <Card className="overflow-hidden">
-          <div className="relative h-[400px] bg-muted flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <MapPin className="h-16 w-16 text-muted-foreground/50 mx-auto" />
-              <p className="text-muted-foreground">Map integration placeholder</p>
-              <p className="text-sm text-muted-foreground">123 Seva Street, Mumbai, Maharashtra 400001</p>
+        <FadeIn delay={0.1}>
+          <Card className="overflow-hidden border-2 shadow-lg">
+            <div className="relative h-[400px] bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="h-20 w-20 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-4">
+                  <MapPin className="h-10 w-10 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold mb-2">Map integration placeholder</p>
+                  <p className="text-muted-foreground">123 Seva Street, Mumbai, Maharashtra 400001</p>
+                  <p className="text-sm text-muted-foreground mt-2">India</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </FadeIn>
+      </Section>
+
+      {/* CTA Section */}
+      <Section className="gradient-primary text-primary-foreground">
+        <div className="text-center space-y-6 max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold">We're Here to Help</h2>
+          <p className="text-lg opacity-90 leading-relaxed">
+            Whether you want to volunteer, make a donation, partner with us, or simply learn more about
+            our work, we'd love to hear from you. Reach out today and join us in making a difference.
+          </p>
+        </div>
       </Section>
     </div>
   )

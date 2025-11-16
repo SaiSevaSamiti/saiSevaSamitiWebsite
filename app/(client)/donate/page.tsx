@@ -11,8 +11,13 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Section from '@/components/layout/Section'
+import ParallaxHero from '@/components/layout/ParallaxHero'
 import { toast } from 'sonner'
 import { getAllDonators, createDonator } from '@/app/admin/donators/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
+import { SlideIn } from '@/components/animations/SlideIn'
+import { ScaleIn } from '@/components/animations/ScaleIn'
+import { StaggerContainer, StaggerItem } from '@/components/animations/StaggerContainer'
 
 interface Donator {
   id: string
@@ -188,29 +193,33 @@ export default function DonatePage() {
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-primary">Make a Difference</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Support Our <span className="text-primary">Mission</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Your generous contribution helps us provide food, medical aid, and hope to those who need
-            it most. Every donation makes a meaningful impact in someone's life.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <div className="px-6 py-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm text-muted-foreground">100% Transparent</p>
+      <ParallaxHero imageSrc="/images/donate-now.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit gradient-primary">Make a Difference</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Support Our <span className="text-primary">Mission</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Your generous contribution helps us provide food, medical aid, and hope to those who need
+                it most. Every donation makes a meaningful impact in someone's life.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 pt-4">
+                <div className="px-6 py-3 rounded-lg bg-white/10 border border-white/30 backdrop-blur-sm">
+                  <p className="text-sm text-white">100% Transparent</p>
+                </div>
+                <div className="px-6 py-3 rounded-lg bg-white/10 border border-white/30 backdrop-blur-sm">
+                  <p className="text-sm text-white">Tax Exemption Available</p>
+                </div>
+                <div className="px-6 py-3 rounded-lg bg-white/10 border border-white/30 backdrop-blur-sm">
+                  <p className="text-sm text-white">Verified Organization</p>
+                </div>
+              </div>
             </div>
-            <div className="px-6 py-3 rounded-lg bg-success/10 border border-success/20">
-              <p className="text-sm text-muted-foreground">Tax Exemption Available</p>
-            </div>
-            <div className="px-6 py-3 rounded-lg bg-accent/10 border border-accent/20">
-              <p className="text-sm text-muted-foreground">Verified Organization</p>
-            </div>
-          </div>
+          </FadeIn>
         </div>
-      </Section>
+      </ParallaxHero>
 
       {/* Payment Methods Section */}
       <Section shade="primary">
@@ -224,30 +233,29 @@ export default function DonatePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <StaggerContainer staggerDelay={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {paymentMethods.map((method, index) => (
-            <Card
-              key={index}
-              className="text-center hover:shadow-lg transition-shadow animate-in fade-in-50"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-6 space-y-4">
-                <div className={`h-16 w-16 rounded-full ${method.bgColor} mx-auto flex items-center justify-center`}>
-                  <method.icon className={`h-8 w-8 ${method.color}`} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">{method.title}</h3>
-                  <p className="text-sm text-muted-foreground">{method.description}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <StaggerItem key={index}>
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardContent className="p-6 space-y-4">
+                  <div className={`h-16 w-16 rounded-full ${method.bgColor} mx-auto flex items-center justify-center`}>
+                    <method.icon className={`h-8 w-8 ${method.color}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{method.title}</h3>
+                    <p className="text-sm text-muted-foreground">{method.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Payment Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* QR Code Card */}
-          <Card className="border-2 border-primary/20">
+          <SlideIn direction="left" delay={0.1}>
+            <Card className="border-2 border-primary/20">
             <CardContent className="p-8 space-y-6">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -260,12 +268,14 @@ export default function DonatePage() {
               </div>
 
               <div className="bg-muted rounded-lg p-8 flex items-center justify-center">
-                <div className="bg-white p-4 rounded-lg">
-                  <div className="h-48 w-48 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
-                    <div className="text-center space-y-2">
-                      <Smartphone className="h-16 w-16 text-muted-foreground/50 mx-auto" />
-                      <p className="text-sm text-muted-foreground">QR Code Placeholder</p>
-                    </div>
+                <div className="bg-white p-4 rounded-lg shadow-lg">
+                  <div className="relative h-64 w-64">
+                    <Image
+                      src="/images/qr.jpg"
+                      alt="UPI QR Code for donations"
+                      fill
+                      className="object-contain"
+                    />
                   </div>
                 </div>
               </div>
@@ -288,9 +298,11 @@ export default function DonatePage() {
               </div>
             </CardContent>
           </Card>
+          </SlideIn>
 
           {/* Bank Details Card */}
-          <Card className="border-2 border-secondary/20">
+          <SlideIn direction="right" delay={0.2}>
+            <Card className="border-2 border-secondary/20">
             <CardContent className="p-8 space-y-6">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center">
@@ -321,6 +333,7 @@ export default function DonatePage() {
               </div>
             </CardContent>
           </Card>
+          </SlideIn>
         </div>
       </Section>
 
@@ -338,9 +351,10 @@ export default function DonatePage() {
             </p>
           </div>
 
-          <Card className="border-2">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+          <ScaleIn delay={0.1}>
+            <Card className="border-2">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name *</Label>
@@ -460,8 +474,9 @@ export default function DonatePage() {
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </ScaleIn>
         </div>
       </Section>
 
@@ -498,48 +513,48 @@ export default function DonatePage() {
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto space-y-4">
+          <StaggerContainer staggerDelay={0.05} className="max-w-4xl mx-auto space-y-4">
             {topDonators.map((donor, index) => (
-              <Card
-                key={donor.id}
-                className={`hover:shadow-lg transition-all duration-300 animate-in fade-in-50 ${
-                  index < 3 ? 'border-2 border-primary/30' : ''
-                }`}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div
-                        className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          index === 0
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : index === 1
-                              ? 'bg-gray-400/20 text-gray-600'
-                              : index === 2
-                                ? 'bg-orange-500/20 text-orange-600'
-                                : 'bg-primary/10 text-primary'
-                        }`}
-                      >
-                        {index < 3 ? (
-                          <Trophy className="h-6 w-6" />
-                        ) : (
-                          <Heart className="h-5 w-5" />
-                        )}
+              <StaggerItem key={donor.id}>
+                <Card
+                  className={`hover:shadow-lg transition-all duration-300 ${
+                    index < 3 ? 'border-2 border-primary/30' : ''
+                  }`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div
+                          className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            index === 0
+                              ? 'bg-yellow-500/20 text-yellow-600'
+                              : index === 1
+                                ? 'bg-gray-400/20 text-gray-600'
+                                : index === 2
+                                  ? 'bg-orange-500/20 text-orange-600'
+                                  : 'bg-primary/10 text-primary'
+                          }`}
+                        >
+                          {index < 3 ? (
+                            <Trophy className="h-6 w-6" />
+                          ) : (
+                            <Heart className="h-5 w-5" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{donor.name}</h3>
+                          <p className="text-sm text-muted-foreground">Donated in {formatDate(donor.date)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{donor.name}</h3>
-                        <p className="text-sm text-muted-foreground">Donated in {formatDate(donor.date)}</p>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(donor.amount)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">{formatCurrency(donor.amount)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </Section>
       ) : null}
 

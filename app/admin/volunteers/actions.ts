@@ -59,6 +59,63 @@ export async function getAllVolunteers(): Promise<{
   }
 }
 
+export async function getVolunteersPaginated(
+  page: number = 1,
+  limit: number = 4,
+  activeOnly: boolean = true,
+  showInListOnly: boolean = true
+): Promise<{
+  success: boolean
+  volunteers?: VolunteerResponse[]
+  totalCount?: number
+  totalPages?: number
+  currentPage?: number
+  message?: string
+}> {
+  try {
+    await dbConnect()
+
+    const skip = (page - 1) * limit
+    const query: { isActive?: boolean; showInList?: boolean } = {}
+    if (activeOnly) query.isActive = true
+    if (showInListOnly) query.showInList = true
+
+    const [volunteers, totalCount] = await Promise.all([
+      Volunteer.find(query).sort({ _id: 1 }).skip(skip).limit(limit).lean(),
+      Volunteer.countDocuments(query),
+    ])
+
+    return {
+      success: true,
+      volunteers: volunteers.map((volunteer) => ({
+        id: volunteer._id.toString(),
+        name: volunteer.name,
+        email: volunteer.email,
+        phone: volunteer.phone,
+        role: volunteer.role,
+        joiningDate: volunteer.joiningDate?.toString(),
+        image: volunteer.image,
+        dateOfBirth: volunteer.dateOfBirth?.toString(),
+        fbURL: volunteer.fbURL,
+        instaURL: volunteer.instaURL,
+        twitterURL: volunteer.twitterURL,
+        linkedinURL: volunteer.linkedinURL,
+        showInList: volunteer.showInList,
+        isActive: volunteer.isActive,
+      })),
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    }
+  } catch (error) {
+    console.error('Get paginated volunteers error:', error)
+    return {
+      success: false,
+      message: 'Failed to fetch volunteers',
+    }
+  }
+}
+
 export async function createVolunteer(data: {
   name: string
   email: string
@@ -125,6 +182,7 @@ export async function createVolunteer(data: {
     })
 
     revalidatePath('/admin/volunteers')
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,
@@ -216,6 +274,7 @@ export async function updateVolunteer(
     await volunteer.save()
 
     revalidatePath('/admin/volunteers')
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,
@@ -270,6 +329,7 @@ export async function deleteVolunteer(volunteerId: string): Promise<{
     }
 
     revalidatePath('/admin/volunteers')
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,

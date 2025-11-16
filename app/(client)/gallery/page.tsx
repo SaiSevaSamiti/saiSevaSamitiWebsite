@@ -2,14 +2,15 @@
 
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ImageIcon, Sparkles, Search, X, Calendar } from 'lucide-react'
+import { ImageIcon, Sparkles, X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Section from '@/components/layout/Section'
+import ParallaxHero from '@/components/layout/ParallaxHero'
 import { getAllGalleryImages } from '@/app/admin/gallery/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
 
 interface GalleryImage {
   id: string
@@ -19,12 +20,18 @@ interface GalleryImage {
   date: string
 }
 
+interface Album {
+  dateKey: string
+  images: GalleryImage[]
+  coverImage: string
+}
+
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([])
-  const [filteredImages, setFilteredImages] = useState<GalleryImage[]>([])
+  const [albums, setAlbums] = useState<Album[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null)
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -34,7 +41,42 @@ export default function GalleryPage() {
         const result = await getAllGalleryImages()
         if (result.success && result.images) {
           setImages(result.images)
-          setFilteredImages(result.images)
+
+          // Group images by date only (ignore time)
+          const albumMap = new Map<string, GalleryImage[]>()
+
+          result.images.forEach((img) => {
+            try {
+              // Extract date only (YYYY-MM-DD format)
+              const imgDate = new Date(img.date)
+
+              // Check if date is valid
+              if (isNaN(imgDate.getTime())) {
+                console.error('Invalid image date:', img.date, 'for image:', img.id)
+                return
+              }
+
+              const dateOnly = imgDate.toISOString().split('T')[0]
+              if (!albumMap.has(dateOnly)) {
+                albumMap.set(dateOnly, [])
+              }
+              albumMap.get(dateOnly)?.push(img)
+            } catch (error) {
+              console.error('Error processing image date:', img.date, error)
+            }
+          })
+
+          // Convert to Album array
+          const albumsArray: Album[] = Array.from(albumMap.entries()).map(([dateKey, imgs]) => ({
+            dateKey: dateKey, // Store the ISO date
+            images: imgs,
+            coverImage: imgs[0].image,
+          }))
+
+          // Sort albums by date (newest first)
+          albumsArray.sort((a, b) => new Date(b.dateKey).getTime() - new Date(a.dateKey).getTime())
+
+          setAlbums(albumsArray)
         }
       } catch (error) {
         console.error('Error fetching gallery images:', error)
@@ -46,64 +88,88 @@ export default function GalleryPage() {
     fetchImages()
   }, [])
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredImages(images)
-    } else {
-      const filtered = images.filter(
-        (img) =>
-          img.imgTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          img.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setFilteredImages(filtered)
-    }
-  }, [searchQuery, images])
-
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      const date = new Date(dateString)
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString)
+        return dateString
+      }
+
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
-    } catch {
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error)
       return dateString
     }
   }
 
+  const openAlbum = (album: Album) => {
+    setSelectedAlbum(album)
+    setCurrentImageIndex(0)
+  }
+
+  const closeCarousel = () => {
+    setSelectedAlbum(null)
+    setCurrentImageIndex(0)
+  }
+
+  const nextImage = () => {
+    if (selectedAlbum) {
+      setCurrentImageIndex((prev) =>
+        prev === selectedAlbum.images.length - 1 ? 0 : prev + 1
+      )
+    }
+  }
+
+  const prevImage = () => {
+    if (selectedAlbum) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? selectedAlbum.images.length - 1 : prev - 1
+      )
+    }
+  }
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedAlbum) {
+        if (e.key === 'ArrowLeft') prevImage()
+        if (e.key === 'ArrowRight') nextImage()
+        if (e.key === 'Escape') closeCarousel()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAlbum, currentImageIndex])
+
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-accent">Our Memories</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Photo <span className="text-primary">Gallery</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Capturing moments of compassion, service, and community impact through our various
-            initiatives and campaigns.
-          </p>
+      <ParallaxHero imageSrc="/images/banner-image-bg.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit bg-white/10 border-white/30 text-white hover:bg-white/20">Our Memories</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Photo <span className="text-white/90">Gallery</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Capturing moments of compassion, service, and community impact through our various
+                initiatives and campaigns.
+              </p>
+            </div>
+          </FadeIn>
         </div>
-      </Section>
+      </ParallaxHero>
 
-      {/* Search Section */}
-      <Section className="!py-8" shade="primary">
-        <div className="max-w-2xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search gallery by title or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 text-base"
-            />
-          </div>
-        </div>
-      </Section>
-
-      {/* Gallery Grid Section */}
+      {/* Albums Grid Section */}
       <Section shade="accent">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -112,121 +178,167 @@ export default function GalleryPage() {
                 <Skeleton className="h-64 w-full" />
                 <div className="p-4 space-y-2">
                   <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-1/2" />
                 </div>
               </Card>
             ))}
           </div>
-        ) : filteredImages.length === 0 ? (
+        ) : albums.length === 0 ? (
           <div className="text-center py-16">
             <div className="h-24 w-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
               <ImageIcon className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-2xl font-semibold mb-2">No Images Found</h3>
+            <h3 className="text-2xl font-semibold mb-2">No Albums Found</h3>
             <p className="text-muted-foreground">
-              {searchQuery
-                ? `No images match "${searchQuery}". Try a different search term.`
-                : 'No images available in the gallery yet. Check back soon!'}
+              No albums available in the gallery yet. Check back soon!
             </p>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold">Our Gallery</h2>
+                <h2 className="text-2xl md:text-3xl font-bold">Our Albums</h2>
                 <p className="text-muted-foreground mt-1">
-                  Showing {filteredImages.length} {filteredImages.length === 1 ? 'image' : 'images'}
+                  Showing {albums.length} {albums.length === 1 ? 'album' : 'albums'}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredImages.map((img, index) => (
-                <Card
-                  key={img.id}
-                  className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                  onClick={() => setSelectedImage(img)}
-                >
-                  {/* Image */}
-                  <div className="relative h-64 bg-muted overflow-hidden">
-                    {img.image ? (
-                      <Image
-                        src={img.image}
-                        alt={img.imgTitle}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="h-16 w-16 text-muted-foreground/20" />
+              {albums.map((album, index) => (
+                <FadeIn key={album.dateKey} delay={index * 0.05}>
+                  <Card
+                    className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300"
+                    onClick={() => openAlbum(album)}
+                  >
+                    {/* Album Cover */}
+                    <div className="relative h-64 bg-muted overflow-hidden">
+                      {album.coverImage ? (
+                        <Image
+                          src={album.coverImage}
+                          alt={formatDate(album.dateKey)}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Sparkles className="h-16 w-16 text-muted-foreground/20" />
+                        </div>
+                      )}
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center">
+                        <p className="text-white font-medium text-lg mb-2">Click to view</p>
+                        <Badge variant="secondary">{album.images.length} {album.images.length === 1 ? 'photo' : 'photos'}</Badge>
                       </div>
-                    )}
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <p className="text-white font-medium">Click to view</p>
                     </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-semibold text-lg line-clamp-1">{img.imgTitle}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{img.description}</p>
-                  </div>
-                </Card>
+                    {/* Album Info */}
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        <span className="font-semibold text-lg">{formatDate(album.dateKey)}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {album.images.length} {album.images.length === 1 ? 'photo' : 'photos'}
+                      </p>
+                    </div>
+                  </Card>
+                </FadeIn>
               ))}
             </div>
           </>
         )}
       </Section>
 
-      {/* Lightbox Modal */}
-      {selectedImage && (
+      {/* Carousel Modal */}
+      {selectedAlbum && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in-0 duration-300"
-          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={closeCarousel}
         >
+          {/* Close Button */}
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 text-white hover:bg-white/20 h-10 w-10 rounded-full"
-            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 text-white hover:bg-white/20 h-10 w-10 rounded-full z-10"
+            onClick={closeCarousel}
           >
             <X className="h-6 w-6" />
           </Button>
 
+          {/* Album Title */}
+          <div className="absolute top-4 left-4 text-white z-10">
+            <h2 className="text-2xl font-bold">{formatDate(selectedAlbum.dateKey)}</h2>
+            <p className="text-sm text-white/70">
+              {currentImageIndex + 1} / {selectedAlbum.images.length}
+            </p>
+          </div>
+
+          {/* Previous Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 rounded-full z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              prevImage()
+            }}
+          >
+            <ChevronLeft className="h-8 w-8" />
+          </Button>
+
+          {/* Image Container */}
           <div
-            className="max-w-6xl w-full max-h-[90vh] overflow-auto bg-card rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-5xl h-[80vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Image */}
-            <div className="relative w-full h-[60vh] bg-muted">
-              {selectedImage.image ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={selectedAlbum.images[currentImageIndex].image}
+                alt={formatDate(selectedAlbum.dateKey)}
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Next Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 rounded-full z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              nextImage()
+            }}
+          >
+            <ChevronRight className="h-8 w-8" />
+          </Button>
+
+          {/* Thumbnail Strip */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-full px-4 py-2 bg-black/50 rounded-lg">
+            {selectedAlbum.images.map((img, index) => (
+              <button
+                key={img.id}
+                className={`relative h-16 w-16 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
+                  index === currentImageIndex
+                    ? 'border-white scale-110'
+                    : 'border-transparent hover:border-white/50'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCurrentImageIndex(index)
+                }}
+              >
                 <Image
-                  src={selectedImage.image}
-                  alt={selectedImage.imgTitle}
+                  src={img.image}
+                  alt={`Thumbnail ${index + 1}`}
                   fill
-                  className="object-contain"
+                  className="object-cover"
                 />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="h-24 w-24 text-muted-foreground/20" />
-                </div>
-              )}
-            </div>
-
-            {/* Details */}
-            <div className="p-6 space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">{selectedImage.imgTitle}</h2>
-                <p className="text-muted-foreground leading-relaxed">{selectedImage.description}</p>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-4 border-t">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(selectedImage.date)}</span>
-              </div>
-            </div>
+              </button>
+            ))}
           </div>
         </div>
       )}

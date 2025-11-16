@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import Section from '@/components/layout/Section'
+import ParallaxHero from '@/components/layout/ParallaxHero'
 import { getAllCertificates } from '@/app/admin/certificates/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/animations/StaggerContainer'
 
 interface Certificate {
   id: string
@@ -44,18 +47,22 @@ export default function CertificatesPage() {
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-accent">Recognition</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Our <span className="text-primary">Certificates</span> & Awards
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Honoring our dedication to community service with recognition from government and social
-            organizations for our impactful initiatives.
-          </p>
+      <ParallaxHero imageSrc="/images/banner-image-3.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit bg-white/10 border-white/30 text-white hover:bg-white/20">Recognition</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Our <span className="text-white/90">Certificates</span> & Awards
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Honoring our dedication to community service with recognition from government and social
+                organizations for our impactful initiatives.
+              </p>
+            </div>
+          </FadeIn>
         </div>
-      </Section>
+      </ParallaxHero>
 
       {/* Certificates Grid Section */}
       <Section shade="primary">
@@ -93,51 +100,51 @@ export default function CertificatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {certificates.map((cert, index) => (
-                <Card
-                  key={cert.id}
-                  className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                  onClick={() => setSelectedCertificate(cert)}
-                >
-                  {/* Certificate Image */}
-                  <div className="relative h-80 bg-muted overflow-hidden">
-                    {cert.image ? (
-                      <Image
-                        src={cert.image}
-                        alt={cert.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Award className="h-24 w-24 text-muted-foreground/20" />
+            <StaggerContainer staggerDelay={0.05} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {certificates.map((cert) => (
+                <StaggerItem key={cert.id}>
+                  <Card
+                    className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300"
+                    onClick={() => setSelectedCertificate(cert)}
+                  >
+                    {/* Certificate Image */}
+                    <div className="relative h-80 bg-muted overflow-hidden">
+                      {cert.image ? (
+                        <Image
+                          src={cert.image}
+                          alt={cert.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Award className="h-24 w-24 text-muted-foreground/20" />
+                        </div>
+                      )}
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <p className="text-white font-medium">Click to view</p>
                       </div>
-                    )}
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <p className="text-white font-medium">Click to view</p>
                     </div>
-                  </div>
 
-                  {/* Certificate Details */}
-                  <CardContent className="p-6 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <Award className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg line-clamp-2">{cert.name}</h3>
-                        {cert.issuedBy && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Issued by: {cert.issuedBy}
-                          </p>
-                        )}
+                    {/* Certificate Details */}
+                    <CardContent className="p-6 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Award className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg line-clamp-2">{cert.name}</h3>
+                          {cert.issuedBy && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Issued by: {cert.issuedBy}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </>
         )}
       </Section>

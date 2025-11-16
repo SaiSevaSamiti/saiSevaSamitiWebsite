@@ -1,14 +1,17 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
-import { Calendar, Sparkles, Search } from 'lucide-react'
+import { Calendar, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
 import Section from '@/components/layout/Section'
+import ParallaxHero from '@/components/layout/ParallaxHero'
 import { getAllCampaigns } from '@/app/admin/campaigns/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/animations/StaggerContainer'
 
 interface Campaign {
   id: string
@@ -20,9 +23,7 @@ interface Campaign {
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -32,7 +33,6 @@ export default function CampaignsPage() {
         const result = await getAllCampaigns()
         if (result.success && result.campaigns) {
           setCampaigns(result.campaigns)
-          setFilteredCampaigns(result.campaigns)
         }
       } catch (error) {
         console.error('Error fetching campaigns:', error)
@@ -43,19 +43,6 @@ export default function CampaignsPage() {
 
     fetchCampaigns()
   }, [])
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredCampaigns(campaigns)
-    } else {
-      const filtered = campaigns.filter(
-        (campaign) =>
-          campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          campaign.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setFilteredCampaigns(filtered)
-    }
-  }, [searchQuery, campaigns])
 
   const formatDate = (dateString: string) => {
     try {
@@ -72,34 +59,22 @@ export default function CampaignsPage() {
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-secondary">Our Impact</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Our <span className="text-primary">Campaigns</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Explore our initiatives and programs dedicated to serving communities through food
-            distribution, medical assistance, and awareness campaigns.
-          </p>
+      <ParallaxHero imageSrc="/images/banner-image-bg.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit bg-white/10 border-white/30 text-white hover:bg-white/20">Our Impact</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Our <span className="text-white/90">Campaigns</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Explore our initiatives and programs dedicated to serving communities through food
+                distribution, medical assistance, and awareness campaigns.
+              </p>
+            </div>
+          </FadeIn>
         </div>
-      </Section>
-
-      {/* Search & Filter Section */}
-      <Section className="!py-8" shade="primary">
-        <div className="max-w-2xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search campaigns by name or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 text-base"
-            />
-          </div>
-        </div>
-      </Section>
+      </ParallaxHero>
 
       {/* Campaigns Grid Section */}
       <Section shade="accent">
@@ -117,16 +92,14 @@ export default function CampaignsPage() {
               </Card>
             ))}
           </div>
-        ) : filteredCampaigns.length === 0 ? (
+        ) : campaigns.length === 0 ? (
           <div className="text-center py-16">
             <div className="h-24 w-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-              <Search className="h-12 w-12 text-muted-foreground" />
+              <Sparkles className="h-12 w-12 text-muted-foreground" />
             </div>
             <h3 className="text-2xl font-semibold mb-2">No Campaigns Found</h3>
             <p className="text-muted-foreground">
-              {searchQuery
-                ? `No campaigns match "${searchQuery}". Try a different search term.`
-                : 'No campaigns available at the moment. Check back soon!'}
+              No campaigns available at the moment. Check back soon!
             </p>
           </div>
         ) : (
@@ -135,60 +108,60 @@ export default function CampaignsPage() {
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold">All Campaigns</h2>
                 <p className="text-muted-foreground mt-1">
-                  Showing {filteredCampaigns.length}{' '}
-                  {filteredCampaigns.length === 1 ? 'campaign' : 'campaigns'}
+                  Showing {campaigns.length}{' '}
+                  {campaigns.length === 1 ? 'campaign' : 'campaigns'}
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredCampaigns.map((campaign, index) => (
-                <Card
-                  key={campaign.id}
-                  className="overflow-hidden group hover:shadow-xl transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  {/* Campaign Image */}
-                  <div className="relative h-56 bg-muted overflow-hidden">
-                    {campaign.image ? (
-                      <Image
-                        src={campaign.image}
-                        alt={campaign.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles className="h-20 w-20 text-muted-foreground/20" />
+            <StaggerContainer staggerDelay={0.05} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {campaigns.map((campaign) => (
+                <StaggerItem key={campaign.id}>
+                  <Link href={`/campaigns/${campaign.id}`}>
+                    <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer h-full">
+                      {/* Campaign Image */}
+                      <div className="relative h-56 bg-muted overflow-hidden">
+                        {campaign.image ? (
+                          <Image
+                            src={campaign.image}
+                            alt={campaign.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Sparkles className="h-20 w-20 text-muted-foreground/20" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Campaign Content */}
-                  <CardContent className="p-6 space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                        {campaign.name}
-                      </h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
-                        {campaign.description}
-                      </p>
-                    </div>
+                      {/* Campaign Content */}
+                      <CardContent className="p-6 space-y-4">
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                            {campaign.name}
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                            {campaign.description}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(campaign.date)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(campaign.date)}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </>
         )}
       </Section>
 
       {/* CTA Section */}
-      {!isLoading && filteredCampaigns.length > 0 && (
+      {!isLoading && campaigns.length > 0 && (
         <Section className="gradient-primary text-primary-foreground">
           <div className="text-center space-y-6 max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold">Support Our Campaigns</h2>

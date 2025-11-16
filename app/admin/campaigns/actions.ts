@@ -41,6 +41,42 @@ export async function getAllCampaigns(): Promise<{
   }
 }
 
+export async function getCampaignById(campaignId: string): Promise<{
+  success: boolean
+  campaign?: CampaignResponse
+  message?: string
+}> {
+  try {
+    await dbConnect()
+
+    const campaign = await Campaign.findById(campaignId).lean()
+
+    if (!campaign) {
+      return {
+        success: false,
+        message: 'Campaign not found',
+      }
+    }
+
+    return {
+      success: true,
+      campaign: {
+        id: campaign._id.toString(),
+        name: campaign.name,
+        description: campaign.description,
+        image: campaign.image,
+        date: campaign.date.toString(),
+      },
+    }
+  } catch (error) {
+    console.error('Get campaign by ID error:', error)
+    return {
+      success: false,
+      message: 'Failed to fetch campaign',
+    }
+  }
+}
+
 export async function createCampaign(data: {
   name: string
   description: string

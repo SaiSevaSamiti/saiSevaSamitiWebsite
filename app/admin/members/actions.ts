@@ -57,6 +57,59 @@ export async function getAllMembers(): Promise<{
   }
 }
 
+export async function getMembersPaginated(
+  page: number = 1,
+  limit: number = 8,
+  activeOnly: boolean = true
+): Promise<{
+  success: boolean
+  members?: MemberResponse[]
+  totalCount?: number
+  totalPages?: number
+  currentPage?: number
+  message?: string
+}> {
+  try {
+    await dbConnect()
+
+    const skip = (page - 1) * limit
+    const query = activeOnly ? { isActive: true } : {}
+
+    const [members, totalCount] = await Promise.all([
+      Member.find(query).sort({ priority: 1, _id: 1 }).skip(skip).limit(limit).lean(),
+      Member.countDocuments(query),
+    ])
+
+    return {
+      success: true,
+      members: members.map((member) => ({
+        id: member._id.toString(),
+        name: member.name,
+        email: member.email,
+        phone: member.phone,
+        image: member.image,
+        joiningDate: member.joiningDate?.toString(),
+        designation: member.designation,
+        fbURL: member.fbURL,
+        instaURL: member.instaURL,
+        twitterURL: member.twitterURL,
+        linkedinURL: member.linkedinURL,
+        isActive: member.isActive,
+        priority: member.priority,
+      })),
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    }
+  } catch (error) {
+    console.error('Get paginated members error:', error)
+    return {
+      success: false,
+      message: 'Failed to fetch members',
+    }
+  }
+}
+
 export async function createMember(data: {
   name: string
   email: string
@@ -122,6 +175,7 @@ export async function createMember(data: {
 
     revalidatePath('/admin/members')
     revalidatePath('/') // Revalidate homepage
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,
@@ -208,6 +262,7 @@ export async function updateMember(
 
     revalidatePath('/admin/members')
     revalidatePath('/') // Revalidate homepage
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,
@@ -261,6 +316,7 @@ export async function deleteMember(memberId: string): Promise<{
 
     revalidatePath('/admin/members')
     revalidatePath('/') // Revalidate homepage
+    revalidatePath('/about-us') // Revalidate about us page
 
     return {
       success: true,

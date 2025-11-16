@@ -2,13 +2,18 @@
 
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { Target, Eye, Heart, Users, Award, Sparkles, UserCheck } from 'lucide-react'
+import { Target, Eye, Heart, Users, Award, Sparkles, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import Section from '@/components/layout/Section'
-import { getAllMembers } from '@/app/admin/members/actions'
-import { getAllVolunteers } from '@/app/admin/volunteers/actions'
+import ParallaxHero from '@/components/layout/ParallaxHero'
+import { getMembersPaginated } from '@/app/admin/members/actions'
+import { getVolunteersPaginated } from '@/app/admin/volunteers/actions'
+import { FadeIn } from '@/components/animations/FadeIn'
+import { SlideIn } from '@/components/animations/SlideIn'
+import { StaggerContainer, StaggerItem } from '@/components/animations/StaggerContainer'
 
 interface Member {
   id: string
@@ -30,60 +35,69 @@ export default function AboutUsPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [volunteers, setVolunteers] = useState<Volunteer[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [membersLoading, setMembersLoading] = useState(false)
+  const [volunteersLoading, setVolunteersLoading] = useState(false)
 
+  // Pagination states
+  const [membersPage, setMembersPage] = useState(1)
+  const [membersTotalPages, setMembersTotalPages] = useState(1)
+  const [volunteersPage, setVolunteersPage] = useState(1)
+  const [volunteersTotalPages, setVolunteersTotalPages] = useState(1)
+
+  // Fetch members when page changes
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMembers = async () => {
+      setMembersLoading(true)
       try {
-        setIsLoading(true)
-
-        // Fetch members
-        const membersResult = await getAllMembers()
+        const membersResult = await getMembersPaginated(membersPage, 8, true)
         if (membersResult.success && membersResult.members) {
-          const activeMembers = membersResult.members.filter((m) => m.isActive)
-          setMembers(activeMembers)
-        }
-
-        // Fetch volunteers
-        const volunteersResult = await getAllVolunteers()
-        if (volunteersResult.success && volunteersResult.volunteers) {
-          const activeVolunteers = volunteersResult.volunteers.filter(
-            (v) => v.isActive && v.showInList
-          )
-          setVolunteers(activeVolunteers)
+          setMembers(membersResult.members)
+          setMembersTotalPages(membersResult.totalPages || 1)
+          // Scroll to members section on page change
+          if (membersPage > 1) {
+            document.getElementById('members-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
         }
       } catch (error) {
-        console.error('Error fetching about us data:', error)
+        console.error('Error fetching members:', error)
       } finally {
-        setIsLoading(false)
+        setMembersLoading(false)
       }
     }
 
-    fetchData()
-  }, [])
+    fetchMembers()
+  }, [membersPage])
 
-  const services = [
-    {
-      title: 'Food Distribution',
-      description:
-        'Regular food drives addressing hunger in communities and hospitals, ensuring nutritious meals reach those who need them most.',
-      icon: '🍽️',
-      color: 'bg-primary/10 text-primary',
-    },
-    {
-      title: 'Medical Assistance',
-      description:
-        'Free medical camps, health checkups, and medicine distribution providing healthcare access to underprivileged populations.',
-      icon: '🏥',
-      color: 'bg-secondary/10 text-secondary',
-    },
-    {
-      title: 'Awareness Campaigns',
-      description:
-        'Educational workshops on health, hygiene, and social issues empowering communities with knowledge and resources.',
-      icon: '📢',
-      color: 'bg-accent/10 text-accent',
-    },
-  ]
+  // Fetch volunteers when page changes
+  useEffect(() => {
+    const fetchVolunteers = async () => {
+      setVolunteersLoading(true)
+      try {
+        const volunteersResult = await getVolunteersPaginated(volunteersPage, 4, true, true)
+        if (volunteersResult.success && volunteersResult.volunteers) {
+          setVolunteers(volunteersResult.volunteers)
+          setVolunteersTotalPages(volunteersResult.totalPages || 1)
+          // Scroll to volunteers section on page change
+          if (volunteersPage > 1) {
+            document.getElementById('volunteers-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching volunteers:', error)
+      } finally {
+        setVolunteersLoading(false)
+      }
+    }
+
+    fetchVolunteers()
+  }, [volunteersPage])
+
+  // Initial loading state management
+  useEffect(() => {
+    if (!membersLoading && !volunteersLoading) {
+      setIsLoading(false)
+    }
+  }, [membersLoading, volunteersLoading])
 
   const values = [
     {
@@ -109,83 +123,68 @@ export default function AboutUsPage() {
   return (
     <div className="overflow-x-hidden">
       {/* Hero Section */}
-      <Section gradient className="!py-20 md:!py-28">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <Badge className="mx-auto w-fit gradient-primary">About Our Organization</Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Help the <span className="text-primary">Helpless</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Sai Seva Samiti is a non-profit organization dedicated to serving humanity with
-            compassion, providing essential services and support to those who need it most.
-          </p>
+      <ParallaxHero imageSrc="/images/know-about.jpg" className="min-h-[500px] md:min-h-[600px]">
+        <div className="container-custom py-20 md:py-28">
+          <FadeIn delay={0.1}>
+            <div className="text-center space-y-6 max-w-4xl mx-auto">
+              <Badge className="mx-auto w-fit bg-white/10 border-white/30 text-white hover:bg-white/20">About Our Organization</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Help the <span className="text-white/90">Helpless</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                Sai Seva Samiti is a non-profit organization dedicated to serving humanity with
+                compassion, providing essential services and support to those who need it most.
+              </p>
+            </div>
+          </FadeIn>
         </div>
-      </Section>
+      </ParallaxHero>
 
       {/* Mission & Vision Section */}
       <Section shade="primary">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="border-2 border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-8 space-y-4">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Target className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold">Our Mission</h3>
-              <p className="text-muted-foreground leading-relaxed text-lg">
-                To serve humanity with compassion and dedication, providing essential services such
-                as food distribution, medical assistance, and awareness campaigns. We strive to
-                create lasting positive change in communities and touch lives with hope and support.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-accent/20 shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-8 space-y-4">
-              <div className="h-16 w-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-                <Eye className="h-8 w-8 text-accent" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold">Our Vision</h3>
-              <p className="text-muted-foreground leading-relaxed text-lg">
-                A world where every individual has access to basic necessities, healthcare, and
-                opportunities for growth, regardless of their socio-economic background. We envision
-                healthy, empowered communities thriving together.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </Section>
-
-      {/* What We Do Section */}
-      <Section shade="accent">
-        <div className="text-center space-y-4 mb-12">
-          <Badge variant="outline" className="mx-auto w-fit">
-            Our Services
-          </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold">What Are We Doing</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Our commitment guides every action, every volunteer, and every life we touch through
-            these dedicated programs.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <Card
-              key={index}
-              className="border-2 hover:border-primary hover:shadow-lg transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <CardContent className="p-6 space-y-4">
-                <div
-                  className={`h-16 w-16 rounded-2xl ${service.color} flex items-center justify-center text-4xl`}
-                >
-                  {service.icon}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+          <SlideIn direction="left" delay={0.1}>
+            <Card className="border-2 border-primary/20 shadow-lg h-full">
+              <CardContent className="p-8 space-y-4">
+                <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Target className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">{service.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{service.description}</p>
+                <h3 className="text-2xl font-bold">Our Mission</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  To serve humanity with compassion and dedication, providing
+                  essential services and support to those who need it most,
+                  creating lasting positive change in communities.
+                </p>
               </CardContent>
             </Card>
-          ))}
+          </SlideIn>
+
+          <FadeIn delay={0.15}>
+            <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
+              <Image
+                src="/images/know-about.jpg"
+                alt="Our Mission and Vision"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </FadeIn>
+
+          <SlideIn direction="right" delay={0.2}>
+            <Card className="border-2 border-accent/20 shadow-lg h-full">
+              <CardContent className="p-8 space-y-4">
+                <div className="h-14 w-14 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Eye className="h-7 w-7 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold">Our Vision</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  A world where every individual has access to basic necessities,
+                  healthcare, and opportunities for growth, regardless of their
+                  socio-economic background.
+                </p>
+              </CardContent>
+            </Card>
+          </SlideIn>
         </div>
       </Section>
 
@@ -198,19 +197,21 @@ export default function AboutUsPage() {
           <h2 className="text-3xl md:text-4xl font-bold">What We Stand For</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StaggerContainer staggerDelay={0.15} className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {values.map((value, index) => (
-            <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="p-8 space-y-4">
-                <div className="h-16 w-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                  <value.icon className={`h-8 w-8 ${value.color}`} />
-                </div>
-                <h3 className="text-xl font-semibold">{value.title}</h3>
-                <p className="text-muted-foreground">{value.description}</p>
-              </CardContent>
-            </Card>
+            <StaggerItem key={index}>
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardContent className="p-8 space-y-4">
+                  <div className="h-16 w-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+                    <value.icon className={`h-8 w-8 ${value.color}`} />
+                  </div>
+                  <h3 className="text-xl font-semibold">{value.title}</h3>
+                  <p className="text-muted-foreground">{value.description}</p>
+                </CardContent>
+              </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </Section>
 
       {/* Team Members Section */}
@@ -223,7 +224,7 @@ export default function AboutUsPage() {
             <h2 className="text-3xl md:text-4xl font-bold">Meet Our Members</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i}>
                 <CardContent className="p-6 space-y-4">
                   <Skeleton className="h-40 w-40 rounded-full mx-auto" />
@@ -237,7 +238,7 @@ export default function AboutUsPage() {
           </div>
         </Section>
       ) : members.length > 0 ? (
-        <Section shade="muted">
+        <Section shade="muted" id="members-section">
           <div className="text-center space-y-4 mb-12">
             <Badge variant="outline" className="mx-auto w-fit">
               Our Team
@@ -249,33 +250,66 @@ export default function AboutUsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {members.map((member, index) => (
-              <Card
-                key={member.id}
-                className="hover:shadow-lg transition-shadow animate-in fade-in-50"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <CardContent className="p-6 space-y-4">
-                  <div className="h-40 w-40 mx-auto rounded-full bg-muted overflow-hidden relative">
-                    {member.image ? (
-                      <Image src={member.image} alt={member.name} fill className="object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <UserCheck className="h-20 w-20 text-muted-foreground/50" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-center space-y-1">
-                    <h3 className="font-semibold text-lg">{member.name}</h3>
-                    {member.designation && (
-                      <p className="text-sm text-primary font-medium">{member.designation}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="relative">
+            {membersLoading && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg min-h-[400px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading members...</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {members.map((member) => (
+                <Card key={member.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="h-40 w-40 mx-auto rounded-full bg-muted overflow-hidden relative">
+                      {member.image ? (
+                        <Image src={member.image} alt={member.name} fill className="object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <UserCheck className="h-20 w-20 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center space-y-1">
+                      <h3 className="font-semibold text-lg">{member.name}</h3>
+                      {member.designation && (
+                        <p className="text-sm text-primary font-medium">{member.designation}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
+
+          {membersTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMembersPage((prev) => Math.max(prev - 1, 1))}
+                disabled={membersPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {membersPage} of {membersTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMembersPage((prev) => Math.min(prev + 1, membersTotalPages))}
+                disabled={membersPage === membersTotalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </Section>
       ) : null}
 
@@ -303,7 +337,7 @@ export default function AboutUsPage() {
           </div>
         </Section>
       ) : volunteers.length > 0 ? (
-        <Section shade="primary">
+        <Section shade="primary" id="volunteers-section">
           <div className="text-center space-y-4 mb-12">
             <Badge variant="outline" className="mx-auto w-fit">
               Our Volunteers
@@ -315,38 +349,71 @@ export default function AboutUsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {volunteers.map((volunteer, index) => (
-              <Card
-                key={volunteer.id}
-                className="hover:shadow-lg transition-shadow animate-in fade-in-50"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <CardContent className="p-6 space-y-4">
-                  <div className="h-32 w-32 mx-auto rounded-full bg-muted overflow-hidden relative">
-                    {volunteer.image ? (
-                      <Image
-                        src={volunteer.image}
-                        alt={volunteer.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Users className="h-16 w-16 text-muted-foreground/50" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-center space-y-1">
-                    <h3 className="font-semibold text-lg">{volunteer.name}</h3>
-                    {volunteer.role && (
-                      <p className="text-sm text-muted-foreground">{volunteer.role}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="relative">
+            {volunteersLoading && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg min-h-[300px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading volunteers...</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {volunteers.map((volunteer) => (
+                <Card key={volunteer.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="h-32 w-32 mx-auto rounded-full bg-muted overflow-hidden relative">
+                      {volunteer.image ? (
+                        <Image
+                          src={volunteer.image}
+                          alt={volunteer.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Users className="h-16 w-16 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center space-y-1">
+                      <h3 className="font-semibold text-lg">{volunteer.name}</h3>
+                      {volunteer.role && (
+                        <p className="text-sm text-muted-foreground">{volunteer.role}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
+
+          {volunteersTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVolunteersPage((prev) => Math.max(prev - 1, 1))}
+                disabled={volunteersPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {volunteersPage} of {volunteersTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVolunteersPage((prev) => Math.min(prev + 1, volunteersTotalPages))}
+                disabled={volunteersPage === volunteersTotalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </Section>
       ) : null}
 
